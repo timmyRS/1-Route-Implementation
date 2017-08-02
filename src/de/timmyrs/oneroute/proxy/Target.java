@@ -18,6 +18,7 @@ class Target extends Thread
 	final Socket sock;
 	private final ListenerConfig config;
 	private boolean authed = false;
+	private boolean proxyConnection = false;
 
 	Target(Socket sock, ListenerConfig config)
 	{
@@ -125,19 +126,18 @@ class Target extends Thread
 							if((this.config.pass.equals(reader.readString())) || (this.config.pass.equals("")))
 							{
 								this.authed = true;
-								System.out.println("[" + this.sock.getInetAddress().toString() + "] Authentication was successful.");
 								switch(reader.readByte())
 								{
 									default:
 										throw new SomethingWentWrongException("Target wanted to open unknown connection type.");
-									case 0:
+									case 0x00:
+										System.out.println("[" + this.sock.getInetAddress().toString() + "] Authentication was successful.");
 										new PacketWriter(OneRoutePacket.AUTH_RESPONSE)
 												.addBoolean(true)
 												.send(out);
 										break;
-									case 1:
+									case 0x01:
 										forPort = reader.readUnsignedShort();
-										boolean needed = false;
 										synchronized(Main.portListeners)
 										{
 											for(PortListener listener : Main.portListeners)
@@ -152,28 +152,30 @@ class Target extends Thread
 																	.addBoolean(true)
 																	.send(out);
 															Client c = listener.waitingClients.get(0);
+															reader.finish();
+															proxyConnection = true;
 															c.proxyTo(this.sock);
 															synchronized(listener.clients)
 															{
 																listener.waitingClients.remove(c);
 																listener.clients.add(c);
 															}
-															interrupt();
-															needed = true;
 															break;
 														}
 													}
 												}
 											}
 										}
-										if(needed)
-											break;
-										new PacketWriter(OneRoutePacket.AUTH_RESPONSE)
-												.addBoolean(false)
-												.addByte((byte) 0x00)
-												.addString("Proxy Connection for port " + forPort + " was not needed.")
-												.send(out);
-										this.sock.close();
+										if(!proxyConnection)
+										{
+											new PacketWriter(OneRoutePacket.AUTH_RESPONSE)
+													.addBoolean(false)
+													.addByte((byte) 0x00)
+													.addString("Proxy Connection for port " + forPort + " was not needed.")
+													.send(out);
+											this.sock.close();
+										}
+										break;
 								}
 							}
 							else
@@ -195,11 +197,14 @@ class Target extends Thread
 							this.sock.close();
 						}
 					}
+					if(proxyConnection)
+					{
+						break;
+					}
 					reader.finish();
 				}
-				if(Thread.interrupted()) break;
 			}
-			while(!this.sock.isClosed());
+			while(!Thread.interrupted() && !this.sock.isClosed());
 		}
 		catch(SomethingWentWrongException e)
 		{
