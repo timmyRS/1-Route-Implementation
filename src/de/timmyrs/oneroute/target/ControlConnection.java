@@ -18,7 +18,8 @@ public class ControlConnection extends Thread
 {
 	final ProxyConfig proxyConfig;
 	final ArrayList<ProxyConnection> proxyConnections = new ArrayList<>();
-	private final Socket sock;
+	final Socket sock;
+	int lastData;
 	private boolean authed = false;
 
 	public ControlConnection(ProxyConfig proxyConfig) throws SomethingWentWrongException, IOException
@@ -52,6 +53,7 @@ public class ControlConnection extends Thread
 			{
 				if(in.available() > 2)
 				{
+					lastData = (int) (System.currentTimeMillis() / 1000L);
 					PacketReader reader = new PacketReader(in);
 					byte packetId = reader.readByte();
 					if(this.authed)
@@ -62,7 +64,6 @@ public class ControlConnection extends Thread
 							{
 								System.out.println("[" + this.proxyConfig.name + "] Couldn't open port " + reader.readUnsignedShort());
 							}
-							System.out.println();
 						}
 						else if(packetId == OneRoutePacket.CONNECT.id)
 						{
@@ -105,6 +106,7 @@ public class ControlConnection extends Thread
 								writer.addUnsignedShort(port.proxy_port);
 							}
 							writer.send(out);
+							new ControlConnectionHeartbeater(this);
 						}
 						else
 						{
@@ -154,5 +156,6 @@ public class ControlConnection extends Thread
 		{
 			Main.controlConnections.remove(this);
 		}
+		System.out.println("[" + this.sock.getInetAddress().toString() + "] Connections & ports have been closed.");
 	}
 }

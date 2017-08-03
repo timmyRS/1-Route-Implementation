@@ -8,12 +8,14 @@ public class IOStreamProxy extends Thread
 {
 	private final InputStream in;
 	private final OutputStream out;
+	int lastData = 0;
 
 	public IOStreamProxy(InputStream in, OutputStream out)
 	{
 		this.in = in;
 		this.out = out;
 		new Thread(this, "IO Stream Proxy").start();
+		new IOStreamProxyCloser(this);
 	}
 
 	public void run()
@@ -26,6 +28,7 @@ public class IOStreamProxy extends Thread
 				//noinspection ResultOfMethodCallIgnored
 				this.in.read(arr, 0, arr.length);
 				this.out.write(arr);
+				lastData = (int) (System.currentTimeMillis() / 1000L);
 			}
 			while(!Thread.interrupted());
 		}

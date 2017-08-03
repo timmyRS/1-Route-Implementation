@@ -15,8 +15,7 @@ public class Listener extends Thread
 	private final ListenerConfig config;
 	private final ServerSocket socket;
 
-	public Listener(ListenerConfig config)
-			throws SomethingWentWrongException
+	public Listener(ListenerConfig config) throws SomethingWentWrongException
 	{
 		this.config = config;
 		try

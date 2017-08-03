@@ -17,6 +17,7 @@ class Target extends Thread
 {
 	final Socket sock;
 	private final ListenerConfig config;
+	int lastData;
 	private boolean authed = false;
 	private boolean proxyConnection = false;
 
@@ -39,6 +40,7 @@ class Target extends Thread
 			{
 				if(in.available() > 2)
 				{
+					lastData = (int) (System.currentTimeMillis() / 1000L);
 					PacketReader reader = new PacketReader(in);
 					byte packetId = reader.readByte();
 					boolean done;
@@ -135,6 +137,7 @@ class Target extends Thread
 										new PacketWriter(OneRoutePacket.AUTH_RESPONSE)
 												.addBoolean(true)
 												.send(out);
+										new TargetCloser(this);
 										break;
 									case 0x01:
 										forPort = reader.readUnsignedShort();
@@ -238,5 +241,6 @@ class Target extends Thread
 				}
 			}
 		}
+		System.out.println("[" + this.sock.getInetAddress().toString() + "] Connections & ports have been closed.");
 	}
 }
