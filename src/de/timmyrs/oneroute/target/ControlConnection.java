@@ -51,7 +51,7 @@ public class ControlConnection extends Thread
 			out = this.sock.getOutputStream();
 			do
 			{
-				if(in.available() > 2)
+				if(in.available() > 0)
 				{
 					lastData = (int) (System.currentTimeMillis() / 1000L);
 					PacketReader reader = new PacketReader(in);
@@ -62,7 +62,7 @@ public class ControlConnection extends Thread
 						{
 							for(int i = reader.readByte(); i > 0; i--)
 							{
-								System.out.println("[" + this.proxyConfig.name + "] Couldn't open port " + reader.readUnsignedShort());
+								System.out.println("[" + this.proxyConfig.name + "] Couldn't open remote port " + reader.readUnsignedShort() + ".");
 							}
 						}
 						else if(packetId == OneRoutePacket.CONNECT.id)

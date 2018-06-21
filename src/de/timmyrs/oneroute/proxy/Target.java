@@ -59,7 +59,7 @@ class Target extends Thread
 									{
 										PortListener listener = new PortListener(port, this);
 										Main.portListeners.add(listener);
-										System.out.println("[" + this.sock.getInetAddress().toString() + "] Opened port " + port);
+										System.out.println("[" + this.sock.getInetAddress().toString() + "] Opened local port " + port + ".");
 									}
 									catch(IOException ignored)
 									{
@@ -111,7 +111,7 @@ class Target extends Thread
 													}
 												}
 											}
-											System.out.println("[" + this.sock.getInetAddress().toString() + "] Closed port " + listener.port);
+											System.out.println("[" + this.sock.getInetAddress().toString() + "] Closed local port " + listener.port);
 											done = false;
 											break;
 										}
@@ -133,7 +133,7 @@ class Target extends Thread
 									default:
 										throw new SomethingWentWrongException("Target wanted to open unknown connection type.");
 									case 0x00:
-										System.out.println("[" + this.sock.getInetAddress().toString() + "] Authentication was successful.");
+										System.out.println("[" + this.sock.getInetAddress().toString() + "] Authentication succeeded.");
 										new PacketWriter(OneRoutePacket.AUTH_RESPONSE)
 												.addBoolean(true)
 												.send(out);
@@ -183,7 +183,6 @@ class Target extends Thread
 							}
 							else
 							{
-								System.out.println("[" + this.sock.getInetAddress().toString() + "] Authentication failed: Incorrect password.");
 								new PacketWriter(OneRoutePacket.AUTH_RESPONSE)
 										.addBoolean(false)
 										.addByte((byte) 0x03)
@@ -241,6 +240,9 @@ class Target extends Thread
 				}
 			}
 		}
-		System.out.println("[" + this.sock.getInetAddress().toString() + "] Connections & ports have been closed.");
+		if(!proxyConnection)
+		{
+			System.out.println("[" + this.sock.getInetAddress().toString() + "] Connections & ports have been closed.");
+		}
 	}
 }
